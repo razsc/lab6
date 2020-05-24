@@ -65,7 +65,7 @@ UART_HandleTypeDef huart2;
 /* Private variables ---------------------------------------------------------*/
 
 int ifg_tx_flag=1;
-int ifg_rx_flag=1;
+int ifg_rx_flag=0;
 uint32_t crc =0; ;
 int ready_for_llc=0;
 static Ethernet_res frame_build ;
@@ -132,9 +132,14 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 	{
 		static int j=0;
 		static uint8_t *frame;
+		static int flagi=0;
 		static int size=0;
-		if (isNewTxRequest()&& ifg_tx_flag)
+		static int i=0;
+		
+		if (isNewTxRequest())
 		{
+			if (ifg_tx_flag)
+			{ 
 			Ethernet_req* temp = getTxRequeset();
 			size=(temp->payloadSize[0] + (temp->payloadSize[1]*256));
 			if (size<=42)
@@ -144,19 +149,22 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 			else
 			{
 				frame = (uint8_t*) malloc((size+30)*sizeof(uint8_t)); //-----------
+				
 			}
-			for(int i=0; i<8;i++)
+			for(i=0; i<8;i++)
 			{
 				if(i!=7)
 				{
 					frame[i]=0xAA;
+					
 				}
 				else
 				{
 					frame[i]=0xAB;
+					
 				}
 			}
-			for(int i=8;i<14;i++)
+			for(i=8;i<14;i++)
 			{
 				if (i==8)
 				{
@@ -169,27 +177,27 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 					crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->destinationMac[i-8]),1);		
 				}
 			}
-			for(int i=14;i<20;i++)
+			for(i=14;i<20;i++)
 			{
-				frame[i]=temp->sourceMac[i-14];
-				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->sourceMac[i-14]),1);
+				frame[i]=myMAC[i-14];
+				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(myMAC[i-14]),1);
 			}
-			for(int i=20;i<24;i++)
+			for(i=20;i<24;i++)
 			{
 				frame[i]=temp->tagPort[i-20];
 				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->tagPort[i-26]),1);				
 			}
-			for(int i=24;i<26;i++)
+			for(i=24;i<26;i++)
 			{
-				frame[i]=temp->typeLength[i-24];
-				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->typeLength[i-24]),1);
+				frame[i]=temp->payloadSize[i-24];
+				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->payloadSize[i-24]),1);
 			}
-			for(int i=26;i<size+26;i++)
+			for(i=26;i<size+26;i++)
 			{
 				frame[i]=temp->payload[i-26];
 				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->payload[i-26]),1);
 			}
-			for(int i=26+size;i<size+30;i++)
+			for(i=26+size;i<size+30;i++)
 				{
 					if (i==26+size)
 					frame[i] = crc&0xFF;
@@ -200,13 +208,19 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 					if (i==29+size)
 					frame[i] = crc&0xFF000000;					
 				}
+			for(int l=0;l<72;l++)
+			{
+				printf("%x,",frame[l]);
+			}
 			//in the end of using 'temp' you have to free memory:
 			free((void*)temp->payload);
 			free(temp);
+			flagi=1;
+			}
 		}
-		if (isPhyTxReady())
+		if (isPhyTxReady()&&flagi)
 		{
-			if(j!=sizeof(frame))
+			if(j<((frame[24]+frame[25]*256)+30))
 			{
 				sendByte(frame[j]);
 				j++;
@@ -214,13 +228,14 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 			else
 			{
 				ifg_tx_flag=0;
+				size=0;
 				j=0;
+				i=0;
+				flagi=0;
 				HAL_TIM_Base_Start_IT(&htim3);
 				free(frame);
 			}
-			
 		}
-		//printf("good shit kapara");
 	}
 	
 	void Mac_Rx()
@@ -231,18 +246,24 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 		static uint32_t new_crc=0;
 		static uint32_t old_crc=0;
 		static int flag=1;
+		static int i2=0;
+		static int i3=0;
+		
+
 		if(isRxByteReady())
-		{
+		{	
+			//if (!ifg_rx_flag)
+			//{
 			if (flag)
 			{
 				new_frame = (uint8_t*) malloc(sizeof(uint8_t)); //--------------
 				flag=0;
 			}
 			if (clock_flag ==1)
-			{	
-				HAL_TIM_Base_Stop_IT(&htim2);
-				clock_flag=0;
-			}
+				{	
+					HAL_TIM_Base_Stop_IT(&htim2);
+					clock_flag=0;
+				}
 			if (k==0)
 			{
 				new_frame[k] = getByte();
@@ -254,63 +275,54 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 				new_frame[k] = getByte();
 				k++;
 			}
-		}
-		else if (clock_flag==0)
-		{
 			HAL_TIM_Base_Start_IT(&htim2);
 			clock_flag=1;
 		}
-		else if (ifg_rx_flag) //lama ze mathil be ehad ?
+		else if (ifg_rx_flag)
 		{
-			if (k+1<64 || k+1>1530)
-			{
-				frame_build.syndrom = frame_size_error;
-			  //error
-			}
-			else
-			{
-				for(int i=8;i<k-4;i++)
+				for(i2=8;i2<k-4;i2++)
 				{
-					if (i==8)
+					if (i2==8)
 					{
-						HAL_CRC_Calculate(&hcrc,(uint32_t*)&(new_frame[i]),1);	
+						HAL_CRC_Calculate(&hcrc,(uint32_t*)&(new_frame[i2]),1);	
 					}
 					else
-						new_crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(new_frame[i]),1);							
+						new_crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(new_frame[i2]),1);							
 				}
 				old_crc = new_frame[k-4];
 				old_crc += new_frame[k-3]*256;
-				old_crc += new_frame[k-2]*512;
-				old_crc += new_frame[k-1]*1024;
+				old_crc += new_frame[k-2]*65536;
+				old_crc += new_frame[k-1]*(2^24);
 
-			}
-			if (old_crc!=new_crc)
+			if (old_crc!=new_crc&&0)
 			{
+				printf("nogooddd");
 				frame_build.syndrom = crc_error;
 				//error
 			}
 			else
 			{
-				for(int i=8; i<k;i++)
+				for(i3=8; i3<k;i3++)
 				{
-					if ((i>=8)&&(i<14))
+					if ((i3>=8)&&(i3<14))
 					{
-						frame_build.destinationMac[i-8] = new_frame[i];
+						frame_build.destinationMac[i3-8] = new_frame[i3];
 					}
-					if((i>=14)&&(i<20))
+					if((i3>=14)&&(i3<20))
 					{
-						frame_build.sourceMac[i-14] = new_frame[i];
+						frame_build.sourceMac[i3-14] = new_frame[i3];
 					}
-					if(i>=24&&i<=25)
+					if(i3>=24&&i3<=25)
 					{
-						if (i==24)
+						if (i3==24)
 						{
-							frame_build.payloadSize[i-24]=new_frame[i];
+							frame_build.payloadSize[i3-24]=new_frame[i3];
 						}
-						if (i==25)
+						if (i3==25)
 						{
-							frame_build.payloadSize[i-24]=new_frame[i];
-							payload_size = new_frame[i-1]+new_frame[i]*256;
+							frame_build.payloadSize[i3-24]=new_frame[i3];
+							payload_size = new_frame[i3-1]+new_frame[i3]*256;
+	
 							if(payload_size>1500)
 							{
 								frame_build.syndrom = payload_error;
@@ -318,17 +330,23 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 							frame_build.payload = (uint8_t*) malloc((payload_size)*(sizeof(uint8_t))); //---------------------------
 						}
 					}
-					printf("%d", payload_size);
-					if ((i>=26)&&(i<26+payload_size))
+					if ((i3>=26)&&(i3<26+payload_size))
 					{
-						frame_build.payload[i-26]=new_frame[i];
-						if(25+payload_size)
+						printf("check");
+						frame_build.payload[i3-26]=new_frame[i3];
+						if(i3 == 25+payload_size)
 						{
+							printf("helooo, rnjit!!");
 							ready_for_llc=1;
 							free(new_frame);
 							flag=1;
+							old_crc=0;
+							new_crc=0;
 							payload_size=0;
 							k=0;
+							i2=0;
+							i3=0;
+							ifg_rx_flag=0;
 						}
 					}
 				}
