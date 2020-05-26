@@ -3,7 +3,7 @@
 <title>Static Call Graph - [DLL\DLL.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image DLL\DLL.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Sun May 24 21:04:12 2020
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Tue May 26 12:22:48 2020
 <BR><P>
 <H3>Maximum Stack Usage =        232 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -366,8 +366,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
 </UL>
-<BR>[Called By]<UL><LI><a href="#[a9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Mac_Rx
-<LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
+<BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
 </UL>
 
 <P><STRONG><a name="[5d]"></a>strtol</STRONG> (Thumb, 112 bytes, Stack size 32 bytes, strtol.o(.text))
@@ -810,7 +809,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f303xe.o(RESET)
 </UL>
-<P><STRONG><a name="[a1]"></a>LLC_Rx</STRONG> (Thumb, 158 bytes, Stack size 16 bytes, main.o(i.LLC_Rx))
+<P><STRONG><a name="[a1]"></a>LLC_Rx</STRONG> (Thumb, 168 bytes, Stack size 16 bytes, main.o(i.LLC_Rx))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = LLC_Rx &rArr; __2printf
 </UL>
 <BR>[Calls]<UL><LI><a href="#[a3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;free
@@ -819,8 +818,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[a9]"></a>Mac_Rx</STRONG> (Thumb, 384 bytes, Stack size 24 bytes, main.o(i.Mac_Rx))
-<BR><BR>[Stack]<UL><LI>Max Depth = 64<LI>Call Chain = Mac_Rx &rArr; HAL_CRC_Calculate &rArr; CRC_Handle_8
+<P><STRONG><a name="[a9]"></a>Mac_Rx</STRONG> (Thumb, 420 bytes, Stack size 32 bytes, main.o(i.Mac_Rx))
+<BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = Mac_Rx &rArr; HAL_CRC_Calculate &rArr; CRC_Handle_8
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ab]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Stop_IT
 <LI><a href="#[ad]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start_IT
@@ -828,16 +827,14 @@ Global Symbols
 <LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_CRC_Accumulate
 <LI><a href="#[aa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;isRxByteReady
 <LI><a href="#[ac]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;getByte
-<LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;calloc
 <LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
-<LI><a href="#[a3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;free
 <LI><a href="#[a2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2printf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[ae]"></a>Mac_Tx</STRONG> (Thumb, 480 bytes, Stack size 24 bytes, main.o(i.Mac_Tx))
-<BR><BR>[Stack]<UL><LI>Max Depth = 64<LI>Call Chain = Mac_Tx &rArr; HAL_CRC_Calculate &rArr; CRC_Handle_8
+<P><STRONG><a name="[ae]"></a>Mac_Tx</STRONG> (Thumb, 540 bytes, Stack size 32 bytes, main.o(i.Mac_Tx))
+<BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = Mac_Tx &rArr; HAL_CRC_Calculate &rArr; CRC_Handle_8
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ad]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start_IT
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_CRC_Calculate
@@ -848,7 +845,6 @@ Global Symbols
 <LI><a href="#[b0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;getTxRequeset
 <LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
 <LI><a href="#[a3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;free
-<LI><a href="#[a2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2printf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
@@ -1001,7 +997,6 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = __2printf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[ae]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Mac_Tx
 <LI><a href="#[a9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Mac_Rx
 <LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LLC_Rx
 <LI><a href="#[c2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;printer
@@ -1041,7 +1036,6 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = free
 </UL>
 <BR>[Called By]<UL><LI><a href="#[ae]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Mac_Tx
-<LI><a href="#[a9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Mac_Rx
 <LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LLC_Rx
 <LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
 </UL>

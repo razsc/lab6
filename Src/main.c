@@ -63,12 +63,13 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+uint32_t payload_size=0;
 int ifg_tx_flag=1;
 int ifg_rx_flag=0;
 uint32_t crc =0; ;
 int ready_for_llc=0;
 static Ethernet_res frame_build ;
+static uint8_t new_frame[1522];
 
 
 uint8_t myMAC[] ={0xcc,0xcc,0xcc,0xcc,0xcc,0xcc}; 	//Our MAC address
@@ -98,7 +99,6 @@ static void MX_NVIC_Init(void);
 	uint8_t phy_reset_wire = 0; 
 	uint8_t rx_data_wire = 0;
 	uint8_t rx_vld_wire = 0;
-	static int payload_size=0;
 	
 void debug(void)
 {
@@ -130,6 +130,7 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 //Important! - after finish using the Ethernet_req struct, you have to free it and also free the Ethernet_req.payload.
 	void Mac_Tx()
 	{
+		static int m=0;
 		static int j=0;
 		static uint8_t *frame;
 		static int flagi=0;
@@ -197,7 +198,22 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 				frame[i]=temp->payload[i-26];
 				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(temp->payload[i-26]),1);
 			}
-			for(i=26+size;i<size+30;i++)
+			for(i=26+size;i<68;i++)
+			{
+				frame[i]=0;
+				crc = HAL_CRC_Accumulate(&hcrc,(uint32_t*)&(frame[i]),1);
+			}
+			if(size<42)
+			{
+				i=68;
+				m=72;
+			}
+			else
+			{
+				i=26+size;
+				m=30+size;
+			}
+			for(i=26+size;i<m;i++)
 				{
 					if (i==26+size)
 					frame[i] = crc&0xFF;
@@ -208,10 +224,10 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 					if (i==29+size)
 					frame[i] = crc&0xFF000000;					
 				}
-			for(int l=0;l<72;l++)
-			{
-				printf("%x,",frame[l]);
-			}
+	//		for(int l=0;l<72;l++)
+		//	{
+			//	printf("%x,",frame[l]);
+			//}
 			//in the end of using 'temp' you have to free memory:
 			free((void*)temp->payload);
 			free(temp);
@@ -242,23 +258,22 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 	{
 		static int clock_flag=0;
 		static int k = 0;
-		static uint8_t *new_frame;
 		static uint32_t new_crc=0;
 		static uint32_t old_crc=0;
 		static int flag=1;
 		static int i2=0;
 		static int i3=0;
-		
+		static int madpis=1;
 
 		if(isRxByteReady())
 		{	
 			//if (!ifg_rx_flag)
 			//{
-			if (flag)
-			{
-				new_frame = (uint8_t*) malloc(sizeof(uint8_t)); //--------------
-				flag=0;
-			}
+			//if (flag)
+			//{
+			//	new_frame = (uint8_t*) malloc(sizeof(uint8_t)); //--------------
+			//	flag=0;
+			//}
 			if (clock_flag ==1)
 				{	
 					HAL_TIM_Base_Stop_IT(&htim2);
@@ -271,15 +286,27 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 			}
 			else
 			{
-				new_frame = (uint8_t*) calloc(1,sizeof(uint8_t));	//--------------------
-				new_frame[k] = getByte();
-				k++;
+			//	new_frame = (uint8_t*) calloc(1,sizeof(uint8_t));	//--------------------
+				if(k<1522)
+				{
+					new_frame[k] = getByte();		
+					printf("%x,",new_frame[k]);
+					k++;
+					//printf("%d,,,,",k);
+				}
+				else
+				{
+					printf("check");
+					//erorr
+				}
 			}
+		
 			HAL_TIM_Base_Start_IT(&htim2);
 			clock_flag=1;
 		}
 		else if (ifg_rx_flag)
 		{
+				frame_build.syndrom = clear;				
 				for(i2=8;i2<k-4;i2++)
 				{
 					if (i2==8)
@@ -306,23 +333,23 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 				{
 					if ((i3>=8)&&(i3<14))
 					{
-						frame_build.destinationMac[i3-8] = new_frame[i3];
+						frame_build.destinationMac[i3-8] = new_frame[i3-1];
 					}
 					if((i3>=14)&&(i3<20))
 					{
-						frame_build.sourceMac[i3-14] = new_frame[i3];
+						frame_build.sourceMac[i3-14] = new_frame[i3-1];
 					}
 					if(i3>=24&&i3<=25)
 					{
 						if (i3==24)
 						{
-							frame_build.payloadSize[i3-24]=new_frame[i3];
+							frame_build.payloadSize[i3-24]=new_frame[i3-2];
 						}
 						if (i3==25)
 						{
-							frame_build.payloadSize[i3-24]=new_frame[i3];
-							payload_size = new_frame[i3-1]+new_frame[i3]*256;
-	
+							frame_build.payloadSize[i3-24]=new_frame[i3-2];
+							payload_size = new_frame[i3-3]*256+new_frame[i3-2];
+							//printf("%x",payload_size);
 							if(payload_size>1500)
 							{
 								frame_build.syndrom = payload_error;
@@ -332,13 +359,10 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 					}
 					if ((i3>=26)&&(i3<26+payload_size))
 					{
-						printf("check");
-						frame_build.payload[i3-26]=new_frame[i3];
+						frame_build.payload[i3-26]=new_frame[i3-1];
 						if(i3 == 25+payload_size)
 						{
-							printf("helooo, rnjit!!");
 							ready_for_llc=1;
-							free(new_frame);
 							flag=1;
 							old_crc=0;
 							new_crc=0;
@@ -350,7 +374,6 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 						}
 					}
 				}
-				
 			}
 		}
 	}
@@ -361,24 +384,26 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
 		static int i=0; //check if need to reset the I each time
 		if(ready_for_llc)
 		{
-			printf("New frame is ready:\n");
+			payload_size = (frame_build.payloadSize[0]*256);
+			payload_size+=frame_build.payloadSize[1];
+			printf("\r\nNew frame is ready:");
 			switch(frame_build.syndrom)
 			{
 				case clear:
-					printf("Destination Address:");
+					printf("\r\nDestination Address:");
 					for(i=0; i<6;i++)
 					{
 						printf("%x",frame_build.destinationMac[i]);
 					}
-					printf("\nSource Address:");
+					printf("\r\nSource Address:");
 					for(i=0;i<6;i++)
 					{
 						printf("%x",frame_build.sourceMac[i]);
 					}
-					printf("\nData:");
+					printf("\r\nData:");
 					for(i=0;i<payload_size;i++)
 					{
-						printf("%c",frame_build.payload[i]);
+							printf("%c",frame_build.payload[i]);
 					}
 					break;
 				case frame_size_error:
@@ -408,7 +433,7 @@ extern Ethernet_req* getTxRequeset(void);						//get from upper_layer data to tr
   *
   * @retval None
   */
-int main(void)
+int main(void)//bolb
 {
   /* USER CODE BEGIN 1 */
   /* USER CODE END 1 */
